@@ -1,7 +1,7 @@
-*.class
-
 .myeclipse
 .settings
 cache
 log
 result
+
+*.class
