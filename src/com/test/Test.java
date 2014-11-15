@@ -12,7 +12,7 @@ import com.seal.util.Helper;
 public class Test {
 	public static Logger log = Logger.getLogger(Seal.class);
 	public static void main(String args[]) {
-		String[] querySeeds = {"雀巢","哈根达斯"};
+		String[] querySeeds = {"奔驰","奥迪"};
 
 		File seedFile = new File(querySeeds[0]);
 		String[] seedArr;
@@ -31,13 +31,13 @@ public class Test {
 		EntityList seeds = new EntityList();
 		for (String s : seedArr) 
 			seeds.add(Entity.parseEntity(s));
-				Seal seal = new Seal();
-				seal.expand(seeds, seeds, hint);
-				//		seal.save();
+		Seal seal = new Seal();
+		seal.expand(seeds, seeds, hint);
+//		seal.save();
 
-				log.info(seal.getEntityList().toDetails(100, seal.getFeature()));
+		log.info(seal.getEntityList().toDetails(100, seal.getFeature()));
 
-				//		Helper.printMemoryUsed();
-				//		Helper.printElapsedTime(startTime);
+//		Helper.printMemoryUsed();
+//		Helper.printElapsedTime(startTime);
 	}
 }

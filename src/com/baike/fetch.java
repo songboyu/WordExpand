@@ -1,15 +1,15 @@
 package com.baike;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.htmlparser.Node;
 import org.htmlparser.NodeFilter;
 import org.htmlparser.Parser;
+import org.htmlparser.tags.Div;
 import org.htmlparser.tags.LinkTag;
 import org.htmlparser.tags.ParagraphTag;
+import org.htmlparser.tags.Span;
 import org.htmlparser.util.NodeList;
 
 import com.seal.util.Helper;
@@ -17,8 +17,8 @@ import com.seal.util.Helper;
 public class fetch {
 
 	public static void main(String[] args) throws Exception {
-		Map<String,String> categorys_01 = getCategorys("胡锦涛");
-		Map<String,String> categorys_02 = getCategorys("温家宝");
+		Map<String,String> categorys_01 = getCategorys("阿莫西林");
+		Map<String,String> categorys_02 = getCategorys("青霉素");
 		categorys_01.keySet().retainAll(categorys_02.keySet());
 		System.out.println("-------------------------------");
 		System.out.println("共属类别"+Helper.repeat('·', 16)+categorys_01.keySet());
@@ -49,9 +49,34 @@ public class fetch {
 			};
 			NodeList nodelist = parser.extractAllNodesThatMatch(filter); 
 			int size = nodelist.size()==0?1:nodelist.size();
-			System.out.println("【"+seed+"】有"+size+"个语义");
+			
 			if(size == 1){
+				parser = new Parser(searchURL);
+				parser.setEncoding("UTF-8"); 
+				filter = new NodeFilter() {
+					public boolean accept(Node node) {
+//						boolean m = ((Div)(node.getParent().getParent().getParent())).getAttribute("class").equals("polysemeBodyCon");
+						if (node instanceof LinkTag &&
+								node.getPreviousSibling() instanceof Span &&
+								node.getParent()!=null &&
+								node.getParent().getParent()!=null &&
+								node.getParent().getParent().getParent()!=null &&
+								node.getParent().getParent().getParent() instanceof Div &&
+								((Div)(node.getParent().getParent().getParent())).getAttribute("class")!=null &&
+								((Div)(node.getParent().getParent().getParent())).getAttribute("class").equals("polysemeBodyCon")){
+							return true;
+						} else {
+							return false;
+						}
+					}
+				};
+				nodelist = parser.extractAllNodesThatMatch(filter);
+				size = nodelist.size()==0?1:nodelist.size()+1;
 				word_page_urls.put(searchURL,seed);
+				for (Node node : nodelist.toNodeArray()) {  
+					LinkTag link = (LinkTag) node; 
+					word_page_urls.put(link.getLink(),link.getLinkText());
+				}
 			}
 			else{
 				for (Node node : nodelist.toNodeArray()) {  
@@ -59,6 +84,7 @@ public class fetch {
 					word_page_urls.put(link.getLink(),link.getLinkText());
 				}
 			}
+			System.out.println("【"+seed+"】有"+size+"个语义");
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
