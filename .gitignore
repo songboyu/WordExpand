@@ -13,6 +13,7 @@ $RECYCLE.BIN/
 *.msi
 *.msm
 *.msp
+*.class
 
 # =========================
 # Operating System Files
@@ -48,4 +49,3 @@ Temporary Items
 cache
 log
 result
-WebRoot/WEB-INF/classes/*
