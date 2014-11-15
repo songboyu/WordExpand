@@ -18,7 +18,7 @@ public class fetch {
 
 	public static void main(String[] args) throws Exception {
 		Map<String,String> categorys_01 = getCategorys("华盛顿");
-		Map<String,String> categorys_02 = getCategorys("奥巴马");
+		Map<String,String> categorys_02 = getCategorys("底特律");
 		categorys_01.keySet().retainAll(categorys_02.keySet());
 		System.out.println("-------------------------------");
 		System.out.println("共属类别"+Helper.repeat('·', 16)+categorys_01.keySet());
