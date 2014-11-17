@@ -103,7 +103,7 @@ public class BaiduWebSearcher extends WebSearcher {
 			} else extractions.add(null);
 		}
 
-		String pageURL = "http:" + extractions.get(0);
+		String pageURL = extractions.get(0);
 		String title = extractions.get(1);
 		String cacheURL1 = extractions.get(2);
 		String summary = extractions.get(3);
