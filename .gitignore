@@ -1,6 +1,8 @@
 .myeclipse
 .settings
-cache
-log
-result
+.gitignore
+WebRoot/WEB-INF/classes/
+cache/
+log/
+result/
 *.class
