@@ -3,5 +3,4 @@
 cache
 log
 result
-
-*.[class]
+*.class
