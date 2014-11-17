@@ -1,7 +1,10 @@
 package com.baike;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.htmlparser.Node;
 import org.htmlparser.NodeFilter;
@@ -17,11 +20,19 @@ import com.seal.util.Helper;
 public class fetch {
 
 	public static void main(String[] args) throws Exception {
-		Map<String,String> categorys_01 = getCategorys("华盛顿");
-		Map<String,String> categorys_02 = getCategorys("底特律");
+		Map<String,String> categorys_01 = getCategorys("哈工大");
+		Map<String,String> categorys_02 = getCategorys("哈尔滨工程大学");
 		categorys_01.keySet().retainAll(categorys_02.keySet());
-		System.out.println("-------------------------------");
-		System.out.println("共属类别"+Helper.repeat('·', 16)+categorys_01.keySet());
+//		for(String c : categorys_01.keySet()){
+//			System.out.println(c+"\t"+categorys_01.get(c));
+//		}
+		Map<String,Set<String>> entities = getWordForAllCategory(categorys_01);
+		for(Entry<String,Set<String>> e:entities.entrySet()){
+			System.out.println("----------------------"+e.getKey());
+			for(String word:e.getValue()){
+				System.out.println(word);
+			}
+		}
 	}
 
 	/**
@@ -135,4 +146,69 @@ public class fetch {
 		}
 		return categorys;
 	}
+
+	/**
+	 * 根据分类集合，获取每个分类的所有实体
+	 * @param categorys 分类集合
+	 * @return 返回所有实体
+	 */
+	public static Map<String,Set<String>> getWordForAllCategory(Map<String,String> categorys){
+		Map<String,Set<String>> wordsMap = new HashMap<String, Set<String>>();
+		for(Entry<String, String> e : categorys.entrySet()){
+			Set<String> words = getRelatedWord(e.getValue(), 500, 1);
+			if(words != null)
+				wordsMap.put(e.getKey(), words);
+		}
+		return wordsMap;
+	}
+	
+	/**
+	 * 输入百度百科分类链接，获取该分类的所有实体
+	 * @param url  百度百科分类链接
+	 * @param limit 每页获取实体条数
+	 * @param index 当前页面
+	 * @return 返回所有实体集合
+	 */
+	public static Set<String> getRelatedWord(
+			String url,
+			int limit,
+			int index){
+		Set<String> wordSet = new HashSet<String>();
+		String uri = url +"?limit="+limit +"&index="+index;
+		try {
+//			System.out.println(uri);
+			Parser parser = new Parser(uri);
+			parser.setEncoding("UTF-8"); 
+
+			NodeFilter filter = new NodeFilter() {
+				public boolean accept(Node node) {
+					if (node instanceof LinkTag && 
+							(node.getText().startsWith("a class=\"title"))) {
+						return true;
+					} else {
+						return false;
+					}
+				}
+			};
+			NodeList nodelist = parser.extractAllNodesThatMatch(filter); 
+			if(nodelist.size() > 0){
+				for (Node node : nodelist.toNodeArray()) {  
+					LinkTag link = (LinkTag) node; 
+					wordSet.add(link.getLinkText());
+				}
+				Set<String> tmp = getRelatedWord(url, limit, index+1);
+				if(tmp != null)
+					wordSet.addAll(tmp);
+				return wordSet;
+			}
+			else
+				return null;
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+
 }
