@@ -12,7 +12,7 @@ import com.seal.util.Helper;
 public class Test {
 	public static Logger log = Logger.getLogger(Seal.class);
 	public static void main(String args[]) {
-		String[] querySeeds = {"奔驰","奥迪"};
+		String[] querySeeds = {"谭咏麟","张国荣"};
 
 		File seedFile = new File(querySeeds[0]);
 		String[] seedArr;

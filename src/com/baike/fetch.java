@@ -20,19 +20,19 @@ import com.seal.util.Helper;
 public class fetch {
 
 	public static void main(String[] args) throws Exception {
-		Map<String,String> categorys_01 = getCategorys("哈工大");
-		Map<String,String> categorys_02 = getCategorys("哈尔滨工程大学");
+		Map<String,String> categorys_01 = getCategorys("华盛顿");
+		Map<String,String> categorys_02 = getCategorys("奥巴马");
 		categorys_01.keySet().retainAll(categorys_02.keySet());
-//		for(String c : categorys_01.keySet()){
-//			System.out.println(c+"\t"+categorys_01.get(c));
-//		}
-		Map<String,Set<String>> entities = getWordForAllCategory(categorys_01);
-		for(Entry<String,Set<String>> e:entities.entrySet()){
-			System.out.println("----------------------"+e.getKey());
-			for(String word:e.getValue()){
-				System.out.println(word);
-			}
+		for(String c : categorys_01.keySet()){
+			System.out.println(c+"\t"+categorys_01.get(c));
 		}
+//		Map<String,Set<String>> entities = getWordForAllCategory(categorys_01);
+//		for(Entry<String,Set<String>> e:entities.entrySet()){
+//			System.out.println("----------------------"+e.getKey());
+//			for(String word:e.getValue()){
+//				System.out.println(word);
+//			}
+//		}
 	}
 
 	/**
@@ -51,6 +51,8 @@ public class fetch {
 				public boolean accept(Node node) {
 					if (node instanceof LinkTag && 
 							node.getParent() instanceof ParagraphTag &&
+							node.getParent().getParent()!=null &&
+							node.getParent().getParent().getText().startsWith("li class=\"list-dot list-dot-paddingleft\"") &&
 							node.getText().startsWith("a target=_blank")) {
 						return true;
 					} else {
@@ -66,7 +68,6 @@ public class fetch {
 				parser.setEncoding("UTF-8"); 
 				filter = new NodeFilter() {
 					public boolean accept(Node node) {
-//						boolean m = ((Div)(node.getParent().getParent().getParent())).getAttribute("class").equals("polysemeBodyCon");
 						if (node instanceof LinkTag &&
 								node.getPreviousSibling() instanceof Span &&
 								node.getParent()!=null &&
@@ -84,7 +85,7 @@ public class fetch {
 				nodelist = parser.extractAllNodesThatMatch(filter);
 				size = nodelist.size()==0?1:nodelist.size()+1;
 				word_page_urls.put(searchURL,seed);
-				for (Node node : nodelist.toNodeArray()) {  
+				for (Node node : nodelist.toNodeArray()) { 
 					LinkTag link = (LinkTag) node; 
 					word_page_urls.put(link.getLink(),link.getLinkText());
 				}
