@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>´ÊÀ©Õ¹</title>
+<meta http-equiv=Content-Type content="text/html;charset=utf-8">
+<title>è¯æ‰©å±•</title>
 
 <!-- Bootstrap core CSS -->
 <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -92,7 +93,7 @@ table.gridtable td {
 								success : function(json) {
 									cl.hide();
 									var columnNum = 5;
-									var th = $('<tr><th colspan='+columnNum+'>À©Õ¹´Ê</th></tr>');
+									var th = $('<tr><th colspan='+columnNum+'>æ‰©å±•è¯</th></tr>');
 									var length = json.ExpandWords.length;
 									var rowNum = Math.ceil(length/columnNum);
 									var num = 0;
@@ -139,7 +140,7 @@ table.gridtable td {
 			<textarea rows=5 class="text" id="input"></textarea>
 			<div class="btn-group btn-group-lg navbar-right">
 				<input type="button" class="btn btn-primary" id="expandButton"
-					value="À©Õ¹" />
+					value="æ‰©å±•" />
 			</div>
 		</div>
 	</div>

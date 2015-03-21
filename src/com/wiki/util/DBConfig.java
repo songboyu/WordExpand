@@ -22,7 +22,7 @@ public class DBConfig {
 		//设置用户名
 		dbConfig.setUser("root");
 		//设置密码
-		dbConfig.setPassword("123123");
+		dbConfig.setPassword("123456");
 		//设置语言
 		dbConfig.setLanguage(Language.chinese);
 		return dbConfig;

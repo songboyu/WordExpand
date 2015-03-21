@@ -147,6 +147,7 @@ public class BaiduWebSearcher extends WebSearcher {
 		//url.append(START_KEY).append("=").append(start).append("&");
 		//url.append(LANG_KEY).append("=").append("lang_zh-CN").append("&");
 		url.append(QUERY_KEY).append("=").append(query);
+		log.info(url.toString());
 		return url.toString();
 	}
 }
