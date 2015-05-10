@@ -12,7 +12,7 @@ public class WikiTest {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		String[] seeds = {"大肠杆菌","链球菌"};
+		String[] seeds = {"王健林","李嘉诚"};
 		Map<String,Set<String>> relatedEntities = WikiExpand.expandSeeds(seeds);
 		for(Entry<String, Set<String>> e:relatedEntities.entrySet()){
 			System.out.println("---------------------"+e.getKey());
@@ -20,5 +20,4 @@ public class WikiTest {
 				System.out.println(title);
 		}
 	}
-
 }

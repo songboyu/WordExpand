@@ -30,17 +30,9 @@ public class BaikeFetch {
 	private final static String 	ID_REX 	= "subview/(.*?).htm|view/(.*?).htm";
 	private	 static Pattern idPattern 	= Pattern.compile(ID_REX);
 	public static void main(String[] args) throws Exception {
-		DBManager.getConnection();
-		Set<String> categorys_01 = getCategorysFromDb("大肠杆菌");
-		Set<String> categorys_02 = getCategorysFromDb("链球菌");
-		categorys_01.retainAll(categorys_02);
-		Map<String,Set<String>> entities = getWordForAllCategory(categorys_01);
-		for(Entry<String,Set<String>> e:entities.entrySet()){
-			System.out.println("----------------------"+e.getKey());
-			for(String word:e.getValue()){
-				System.out.println(word);
-			}
-		}
+		String[] seedArray = {"大肠杆菌", "链球菌"};
+		Map<String,Set<String>> entities = BaikeFetch.baikeExpand(seedArray);
+		System.out.println(entities);
 	}
 
 	/**
