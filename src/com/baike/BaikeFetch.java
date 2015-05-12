@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.log4j.Logger;
 import org.htmlparser.Node;
 import org.htmlparser.NodeFilter;
 import org.htmlparser.Parser;
@@ -26,6 +27,8 @@ import com.baike.util.WikiHttpClient;
 import com.seal.util.Helper;
 
 public class BaikeFetch {
+	public static Logger log = Logger.getLogger(BaikeFetch.class);
+
 	private final static String ID_REX 	= "subview/(.*?).htm|view/(.*?).htm";
 	private	 static Pattern idPattern = Pattern.compile(ID_REX);
 
@@ -42,6 +45,8 @@ public class BaikeFetch {
 		try {
 			Parser parser = new Parser(searchURL);
 			parser.setEncoding("UTF-8"); 
+
+
 			NodeFilter filter = new NodeFilter() {
 				public boolean accept(Node node) {
 					if (node instanceof LinkTag && 
@@ -59,10 +64,12 @@ public class BaikeFetch {
 			int size = nodelist.size()==0?1:nodelist.size();
 
 			if(size == 1){
+				parser = new Parser(searchURL);
+				parser.setEncoding("UTF-8"); 
+
 				filter = new NodeFilter() {
 					public boolean accept(Node node) {
-						if (node instanceof LinkTag &&
-								node.getPreviousSibling() instanceof Span &&
+						if (node.getPreviousSibling() instanceof Span &&
 								node.getParent()!=null &&
 								node.getParent().getParent()!=null &&
 								node.getParent().getParent().getParent()!=null &&
@@ -76,11 +83,20 @@ public class BaikeFetch {
 					}
 				};
 				nodelist = parser.extractAllNodesThatMatch(filter);
-				size = nodelist.size()==0?1:nodelist.size()+1;
-				word_page_urls.put(parser.getURL(),seed);
-				for (Node node : nodelist.toNodeArray()) { 
-					LinkTag link = (LinkTag) node; 
-					word_page_urls.put(link.getLink(),link.getLinkText());
+
+				size = nodelist.size()==0?1:nodelist.size();
+				if(size == 1){
+					word_page_urls.put(parser.getURL(), seed);
+				}else{
+					for (Node node : nodelist.toNodeArray()) { 
+						try{
+							LinkTag link = (LinkTag) node; 
+							word_page_urls.put(link.getLink(), seed+"："+link.getLinkText());
+						}catch(Exception e){
+							Span span = (Span) node;
+							word_page_urls.put(parser.getURL(), seed+"："+span.getStringText());
+						}
+					}
 				}
 			}
 			else{
@@ -89,7 +105,7 @@ public class BaikeFetch {
 					word_page_urls.put(link.getLink(),link.getLinkText());
 				}
 			}
-			System.out.println("【"+seed+"】有"+size+"个语义");
+			log.info("【"+seed+"】有"+size+"个语义");
 
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -104,8 +120,8 @@ public class BaikeFetch {
 	 * 获取百度百科中该词类别标签集合
 	 * @return 返回标签集合
 	 */
-	public static Map<String,String> getCategorys(String seed){
-		Map<String,String> categorys = new HashMap<String, String>();
+	public static Set<String> getCategorysFromWeb(String seed){
+		Set<String> categorys = new HashSet<String>();
 		try {
 			Map<String,String> word_page_urls = getWordPageURL(seed);
 			for(String url : word_page_urls.keySet()){
@@ -125,14 +141,14 @@ public class BaikeFetch {
 				};
 				NodeList nodelist = parser.extractAllNodesThatMatch(filter); 
 				String word = word_page_urls.get(url);
-				System.out.print(word);
-				Map<String,String> sub_categorys = new HashMap<String, String>();
+
+				Set<String> sub_categorys = new HashSet<String>();
 				for (Node node : nodelist.toNodeArray()) {  
 					LinkTag link = (LinkTag) node; 
-					sub_categorys.put(link.getLinkText(), link.getLink());
+					sub_categorys.add(link.getLinkText());
 				}
-				System.out.println(Helper.repeat('·', 20-word.length())+sub_categorys.keySet());
-				categorys.putAll(sub_categorys);
+				log.info(Helper.repeat('·', 20-word.length())+sub_categorys);
+				categorys.addAll(sub_categorys);
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -147,12 +163,14 @@ public class BaikeFetch {
 	 * 获取百度百科中该词类别标签集合
 	 * @return 返回标签集合
 	 */
-	public static Set<String> getCategorysFromDb(String seed){
-		Set<String> categorys = new HashSet<String>();
+	public static Map<String,String> getCategorysFromDb(String seed){
+		Map<String,String> categorys = new HashMap<String,String>();
 		Map<String,String> word_page_urls = getWordPageURL(seed);
 		for(String url : word_page_urls.keySet()){
 			Matcher idMatcher = idPattern.matcher(url);
-			System.out.println(url);
+			String semantics = word_page_urls.get(url);
+			log.info(url.substring(22)+ Helper.repeat('-', 70-url.length()+15)+semantics);
+			
 			if(idMatcher.find()){
 				String id = idMatcher.group(1);
 				if(id == null){
@@ -160,21 +178,23 @@ public class BaikeFetch {
 				}else{
 					id = "s_"+id;
 				}
-				categorys.addAll(getCategoryByEntId(id));
+				categorys.putAll(getCategoryByEntId(id));
 			}
 		}
 		return categorys;
 	}
-	
-	public static Set<String> getCategoryByEntId(String id){
-		Set<String> categorys = new HashSet<String>();
-		String sql = "select tid from relation where ent_id = ?";
+
+	public static Map<String,String> getCategoryByEntId(String id){
+		Map<String,String> categorys = new HashMap<String,String>();
+		String sql = "select a.tid,b.t_name from relation a join tag b on a.tid=b.tid where ent_id = ?";
 		List<Object> params = new ArrayList<Object>();
 		params.add(id);
 		try {
 			ResultSet rs = DBManager.query(sql, params);
 			while(rs.next()){
-				categorys.add(rs.getString(1));
+				String cid = rs.getString(1);
+				String c_name = rs.getString(2);
+				categorys.put(cid, c_name);
 			}
 			DBManager.closeAll(null, null, rs);
 		} catch (SQLTimeoutException e) {
@@ -184,10 +204,11 @@ public class BaikeFetch {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		log.info(categorys.values());
 		return categorys;
 	}
-	
-	public static String getCategory(String id){
+
+	public static String getCategoryNameByCId(String id){
 		String sql = "select t_name from tag where tid = ?";
 		List<Object> params = new ArrayList<Object>();
 		params.add(id);
@@ -205,25 +226,26 @@ public class BaikeFetch {
 		}
 		return "";
 	}
-	
+
 	/**
 	 * 根据分类集合，获取每个分类的所有实体
 	 * @param categorys 分类集合
 	 * @return 返回所有实体
 	 */
-	public static Map<String,Set<String>> getWordForAllCategory(Set<String> categorys){
+	public static Map<String,Set<String>> getWordForAllCategory(Map<String,String> categorys){
 		Map<String,Set<String>> wordsMap = new HashMap<String, Set<String>>();
-		for(String e : categorys){
-			String cat = getCategory(e);
+		for(String c : categorys.keySet()){
+//			String cat = getCategoryNameByCId(e);
+			String cat = categorys.get(c);
 			if(cat.length() == 0)
 				continue;
-			Set<String> words = getRelatedWord(e, 500, 1);
+			Set<String> words = getRelatedWord(c, 500, 1);
 			if(words != null)
 				wordsMap.put(cat, words);
 		}
 		return wordsMap;
 	}
-	
+
 	/**
 	 * 输入百度百科分类链接，获取该分类的所有实体
 	 * @param tagId  百度百科分类标签id
@@ -266,7 +288,7 @@ public class BaikeFetch {
 			return null;
 		return getTableData(tableId);
 	}
-	
+
 	/**
 	 * 获取列表id
 	 * @param content 页面内容
@@ -282,7 +304,7 @@ public class BaikeFetch {
 			int start = id.indexOf('-');
 			id = id.substring(start+1);
 		}
-		
+
 		return id;
 	}
 
@@ -308,26 +330,27 @@ public class BaikeFetch {
 		}
 		return wordSet;
 	}
-	
-    /**
-     * Unicode转汉字
-     * @param str
-     * @return
-     */
-    public static String encodingtoStr(String str){
-        Pattern pattern = Pattern.compile("(\\\\u(\\p{XDigit}{4}))");
-        Matcher matcher = pattern.matcher(str);
-        char ch;
-        while (matcher.find()) {
-        ch = (char) Integer.parseInt(matcher.group(2), 16);
-        str = str.replace(matcher.group(1), ch + "");
-        }
-        return str;
-    }
 
-    public static Map<String,Set<String>> baikeExpand(String[] seeds){
+	/**
+	 * Unicode转汉字
+	 * @param str
+	 * @return
+	 */
+	public static String encodingtoStr(String str){
+		Pattern pattern = Pattern.compile("(\\\\u(\\p{XDigit}{4}))");
+		Matcher matcher = pattern.matcher(str);
+		char ch;
+		while (matcher.find()) {
+			ch = (char) Integer.parseInt(matcher.group(2), 16);
+			str = str.replace(matcher.group(1), ch + "");
+		}
+		return str;
+	}
+
+	public static Map<String,Set<String>> baikeExpand(String[] seeds){
 		DBManager.getConnection();
-		Set<String> categorys = null;
+		Map<String,String> categorys = null;
+		Map<String,String> rCategorys = new HashMap<String,String>();
 		boolean flag = true;
 		for (String seed : seeds){
 			if(flag){
@@ -335,10 +358,16 @@ public class BaikeFetch {
 				flag = false;
 			}
 			else
-				if(categorys != null)
-					categorys.retainAll(getCategorysFromDb(seed));
+				if(categorys != null){
+					Map<String,String> categorysFromDb = getCategorysFromDb(seed);
+					for(String c : categorysFromDb.keySet()){
+						if(categorys.containsKey(c)){
+							rCategorys.put(c, categorys.get(c));
+						}
+					}
+				}
 		}
-		return getWordForAllCategory(categorys);
+		return getWordForAllCategory(rCategorys);
 	}
 
 }

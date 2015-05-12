@@ -150,7 +150,7 @@ public class GlobalVar {
     }
     String value = prop.getProperty(key);
     if (value == null || value.trim().length() == 0) {
-      log.warn("Missing or invalid property name: \"" + key + "\", using default: \"" + defaultValue + "\"");
+      log.info("Missing or invalid property name: \"" + key + "\", using default: \"" + defaultValue + "\"");
       value = defaultValue;
     }
     return value;

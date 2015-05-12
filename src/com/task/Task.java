@@ -249,7 +249,7 @@ public class Task {
 		
 		private boolean writeResultToDb(String[] result){
 			boolean flag = false;
-			System.out.println(Arrays.toString(result));
+//			System.out.println(Arrays.toString(result));
 			if(result != null){
 				
 				String sql = "insert into result(task_id,rs,tag) values(?,?,?)";

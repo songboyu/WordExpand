@@ -65,6 +65,6 @@ public class Test_wiki_local {
 		for (Page outLinkPage : page.getOutlinks()) {
 		    sb.append("  " + outLinkPage.getTitle() + LF);
 		}       
-		System.out.println(sb);
+//		System.out.println(sb);
 	}
 }

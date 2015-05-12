@@ -74,7 +74,7 @@ public class BaiduWebSearcher extends WebSearcher {
 	}
 
 	protected void buildSnippets(String resultPage) {
-		Pattern snippetPat = Pattern.compile("(?s)<div class=\"result.+?</div>"); // - wwc update 6/15
+		Pattern snippetPat = Pattern.compile("(?s)<div class=\"result c-container.+?</div>"); 
 		Pattern[] patterns = new Pattern[] {
 				
 				Pattern.compile("href.*?=.*?\"(.*?)\""),  // 0: page URL  -
