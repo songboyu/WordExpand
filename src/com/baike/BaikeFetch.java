@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,12 +26,14 @@ import com.baike.util.WikiHttpClient;
 import com.seal.util.Helper;
 
 public class BaikeFetch {
-	private final static String 	ID_REX 	= "subview/(.*?).htm|view/(.*?).htm";
-	private	 static Pattern idPattern 	= Pattern.compile(ID_REX);
+	private final static String ID_REX 	= "subview/(.*?).htm|view/(.*?).htm";
+	private	 static Pattern idPattern = Pattern.compile(ID_REX);
 	public static void main(String[] args) throws Exception {
-		String[] seedArray = {"大肠杆菌", "链球菌"};
+		String[] seedArray = {"隆美尔","曼施坦因"};
 		Map<String,Set<String>> entities = BaikeFetch.baikeExpand(seedArray);
-		System.out.println(entities);
+		for(String key : entities.keySet()){
+			System.out.println(key +" "+ entities.get(key).size());
+		}
 	}
 
 	/**
@@ -63,10 +64,8 @@ public class BaikeFetch {
 			};
 			NodeList nodelist = parser.extractAllNodesThatMatch(filter); 
 			int size = nodelist.size()==0?1:nodelist.size();
-			
+
 			if(size == 1){
-				parser = new Parser(searchURL);
-				parser.setEncoding("UTF-8"); 
 				filter = new NodeFilter() {
 					public boolean accept(Node node) {
 						if (node instanceof LinkTag &&
@@ -85,7 +84,7 @@ public class BaikeFetch {
 				};
 				nodelist = parser.extractAllNodesThatMatch(filter);
 				size = nodelist.size()==0?1:nodelist.size()+1;
-				word_page_urls.put(searchURL,seed);
+				word_page_urls.put(parser.getURL(),seed);
 				for (Node node : nodelist.toNodeArray()) { 
 					LinkTag link = (LinkTag) node; 
 					word_page_urls.put(link.getLink(),link.getLinkText());
@@ -160,6 +159,7 @@ public class BaikeFetch {
 		Map<String,String> word_page_urls = getWordPageURL(seed);
 		for(String url : word_page_urls.keySet()){
 			Matcher idMatcher = idPattern.matcher(url);
+			System.out.println(url);
 			if(idMatcher.find()){
 				String id = idMatcher.group(1);
 				if(id == null){
@@ -334,8 +334,7 @@ public class BaikeFetch {
     }
 
     public static Map<String,Set<String>> baikeExpand(String[] seeds){
-		DBManager db = new DBManager();
-		db.getConnection();
+		DBManager.getConnection();
 		Set<String> categorys = null;
 		boolean flag = true;
 		for (String seed : seeds){
