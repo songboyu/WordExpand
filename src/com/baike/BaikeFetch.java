@@ -28,13 +28,6 @@ import com.seal.util.Helper;
 public class BaikeFetch {
 	private final static String ID_REX 	= "subview/(.*?).htm|view/(.*?).htm";
 	private	 static Pattern idPattern = Pattern.compile(ID_REX);
-	public static void main(String[] args) throws Exception {
-		String[] seedArray = {"隆美尔","曼施坦因"};
-		Map<String,Set<String>> entities = BaikeFetch.baikeExpand(seedArray);
-		for(String key : entities.keySet()){
-			System.out.println(key +" "+ entities.get(key).size());
-		}
-	}
 
 	/**
 	 * @param seed
@@ -172,7 +165,6 @@ public class BaikeFetch {
 		}
 		return categorys;
 	}
-	
 	
 	public static Set<String> getCategoryByEntId(String id){
 		Set<String> categorys = new HashSet<String>();

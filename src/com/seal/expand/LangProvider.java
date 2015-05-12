@@ -194,7 +194,7 @@ public class LangProvider {
   }
   
   public static void main(String args[]) {
-    String s = "Richard's office is in NSH-4622";
+	String s = "波ㄆㄛ羅ㄌㄨㄛˊ蜜ㄇㄧˋ";
     Set<Lang> langSet = detect(s);
     
     System.out.println(s);
@@ -202,8 +202,7 @@ public class LangProvider {
       for (Lang lang : langSet)
         System.out.println(lang.getName());
     
-    s = "波ㄆㄛ羅ㄌㄨㄛˊ蜜ㄇㄧˋ";
-    System.out.println(LangProvider.getLang("zh-TW").pattern.matcher(s).matches());
+//    System.out.println(LangProvider.getLang("zh-TW").pattern.matcher(s).matches());
   }
   
   private static Set<Lang> init() {
