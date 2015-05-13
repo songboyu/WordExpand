@@ -17,7 +17,7 @@ import com.seal.util.Helper;
 public class BaiduWebSearcher extends WebSearcher {
 
 	/********************** Baidu Web Parameters **************************/
-	public static final String BASE_URL = "https://www.baidu.com/s?rn=100&";
+	public static final String BASE_URL = "https://www.baidu.com/s?rn=50&";
 	public static final String RESULTS_KEY = "num";
 	public static final String START_KEY = "start";
 	public static final String LANG_KEY = "lr";
