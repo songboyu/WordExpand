@@ -1,14 +1,19 @@
 package com.wiki.expand;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import cn.com.cjf.CJFBeanFactory;
 import cn.com.cjf.ChineseJF;
 
+import com.wiki.entity.CandidateCombination;
+import com.wiki.entity.MCategory;
+import com.wiki.entity.MPage;
 import com.wiki.util.DBConfig;
 import com.wiki.util.SetUtil;
 
@@ -26,11 +31,20 @@ public class WikiFetcher {
 	 * 数据库连接参数配置
 	 */
 	private DatabaseConfiguration dbConfig;
+	
+	private static final String DSIAMBIG_SUFFIX = "_(消歧义)";
+	
+	private static final long WIKI_PAGE_COUNT = 1023909;
+	/**
+	 * 中文简繁转换工具
+	 */
+	private static ChineseJF chinesdJF = CJFBeanFactory.getChineseJF();
 	/**
 	 * Wikipedia处理对象
 	 */
 	private Wikipedia wiki;
 	private static Set<String> badCategoryTitle;
+	
 	static{
 		badCategoryTitle = new HashSet<String>();
 		badCategoryTitle.add("本地相关图片与维基数据不同");
@@ -65,6 +79,7 @@ public class WikiFetcher {
 		badCategoryTitle.add("含有访问日期但无网址的引用的页面");
 		badCategoryTitle.add("TaxoboxLatinName");
 	}
+	
 	public WikiFetcher(){
 		dbConfig = DBConfig.getDBConfig();
 		try {
@@ -74,6 +89,100 @@ public class WikiFetcher {
 			e.printStackTrace();
 		}
 	}
+	
+	/**
+	 * 将所有种子词映射为种子词相关的页面集合
+	 * @param seeds 种子词数组
+	 * @return 返回映射结果
+	 */
+	public Map<String, Set<Page>> getPageMap(String[] seeds){
+		Map<String, Set<Page>> rMap = new HashMap<String, Set<Page>>();
+		//遍历种子词并获取其相关页面集合
+		for(String seed : seeds){
+			rMap.put(seed, getPageSet(seed));
+		}
+		return rMap;
+	}
+	
+	/**
+	 * 根据种子词获取种子词相关的页面集合
+	 * @param seed 种子词
+	 * @return 返回种子词相关的页面集合
+	 */
+	private Set<Page> getPageSet(String seed){
+		Set<Page> rSet = new HashSet<Page>();
+		
+		Page oriPage = null;
+		try {
+			//获取种子词直接相关的页面，，如果存在则加入集合中
+			oriPage = wiki.getPage(seed);
+			
+		} catch (WikiApiException e1) {
+		}
+		//消歧义页面标志位
+		boolean flag = false;
+		try {
+			//遍历页面所属类别，如果属于消歧义页面，则设置标志位为true
+			for(Category c:oriPage.getCategories()){
+				String fanTitle = chinesdJF.chineseFan2Jan(c.getTitle().toString());
+				if(fanTitle.contains("消歧义")){
+					flag = true;
+					break;
+				}
+				
+			}
+		} catch (WikiApiException e1) {
+
+		}
+		//消歧义页面title
+		String catSeed = seed;
+		//如果该页面不为消歧义页面，则将该页面加入集合中
+		//同时设置消岐页面title
+		if(!flag && oriPage != null){
+			rSet.add(oriPage);
+			catSeed += DSIAMBIG_SUFFIX;
+		}
+		try {
+			//获取种子词相关的消岐页面
+			//从消岐页面获取相关条目页面并加入集合中
+			Page disPage = wiki.getPage(catSeed);
+			rSet.addAll(getOutlinks(disPage));
+		} catch (WikiApiException e) {
+		}
+//		for(Page p: rSet){
+//			try {
+//				System.out.println(p.getTitle());
+//			} catch (WikiTitleParsingException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//		}
+		return rSet;
+	}
+	
+	/**
+	 * 获取指向该页面的所有页面
+	 * @param page 页面对象
+	 * @return 返回指向该页面的所有页面集合
+	 */
+	@SuppressWarnings("unused")
+	private Set<Page> getInlinks(Page page){
+		Set<Page> rSet = new HashSet<Page>();
+		rSet = page.getInlinks();
+		return rSet;
+	} 
+	
+	/**
+	 * 获取该页面指向的所有页面
+	 * @param page 页面对象
+	 * @return 返回该页面指向的所有页面集合
+	 */
+	private Set<Page> getOutlinks(Page page){
+		Set<Page> rSet = new HashSet<Page>();
+		rSet = page.getOutlinks();
+		return rSet;
+	}
+	
 	/**
 	 * 根据关键词获取其分类集合
 	 * @param title 关键词
@@ -109,6 +218,90 @@ public class WikiFetcher {
 		return resultSet;
 	}
 
+	public Set<Category> getCategories(Page p){
+		Set<Category> categorySet = null;
+		Set<Category> resultSet = new HashSet<Category>();
+		//获取分类集合
+		categorySet = p.getCategories();
+		if(categorySet != null){
+			for(Category c: categorySet){
+				try {
+					if(c != null){
+						Title t = c.getTitle();
+						//判断是否是坏分类（wiki数据中存在一些坏分类，比如"含有拉丁語的條目"等）
+						if(t != null &&!badCategoryTitle.contains(t.toString())){
+							resultSet.add(c);
+						}
+					}
+				} catch (WikiTitleParsingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		categorySet = null;
+		return resultSet;
+	}
+	
+	/**
+	 * 计算候选组合概率得分
+	 * @param c 组合对象
+	 */
+	public void calcProbScore(CandidateCombination c){
+		double score = 0;
+		for(MPage p: c.getCandiDateSet()){
+			score += Math.log(p.getProb());
+		}
+		c.setProbScore(-score);
+	}
+	
+	/**
+	 * 计算候选组合相关度分数
+	 * @param c 组合对象
+	 */
+	public void calcRelScore(CandidateCombination c){
+		Set<MPage> candidateSet = c.getCandiDateSet();
+		List<MPage> candidateList = new ArrayList<MPage>(candidateSet);
+		double relevance = 0.0;
+		//根据公式R(ai,bj)=ln[rel(ai,bj)]
+		//计算组合相关度得分
+		//首先，计算两两条目的相关度并相加
+		//然后对相关度取log值
+		for(int i=0;i < candidateList.size() - 1;i++){
+			for(int j=i+1;j < candidateList.size();j++){
+				relevance += calcRelevance(candidateList.get(i), candidateList.get(j));
+			}
+		}
+		relevance = Math.log(relevance);
+		c.setRelScore(-relevance);
+	}
+	
+	/**
+	 * 计算两个条目的相关度
+	 * @param mp1 条目1
+	 * @param mp2 条目2
+	 * @return 返回两个条目的相关度
+	 */
+	private double calcRelevance(MPage mp1, MPage mp2){
+		double relevance = 1.0;
+		//首先，获取两个扩展条目的条目对象
+		//接着，获取链接到这两个条目的条目id集合
+		//然后计算链接到这两个条目的条目id集合的交集
+		Page p1 = mp1.getPage();
+		Page p2 = mp2.getPage();
+		Set<Integer> X = p1.getInlinkIDs();
+		Set<Integer> Y = p2.getInlinkIDs();
+		Set<Integer> retain = new HashSet<Integer>(X);
+		retain.retainAll(Y);
+		
+		//根据公式rel(x,y)=1-[log(max(|X|,|Y|))-log(|X∩Y|)]/[log(|W|)-log(min(|X|,|Y|))]
+		//计算两个条目的相关度
+		relevance -= (Math.log(Math.max(X.size()+1, Y.size()+1)) - 
+				Math.log(retain.size()+1)) / (Math.log(WIKI_PAGE_COUNT) - 
+				Math.log(Math.min(X.size()+1, Y.size()+1)));
+		return relevance;
+	}
+	
 	/**
 	 * 获取父分类集合
 	 * @param cat1 子分类集合
@@ -252,8 +445,7 @@ public class WikiFetcher {
 		if(commonCategories == null){
 			return relatedEntity;
 		}
-		//中文简繁转换工具
-		ChineseJF chinesdJF = CJFBeanFactory.getChineseJF();
+		
 		for(MCategory c:commonCategories){
 			//相似实体集合
 			Set<String> relatedStr = new HashSet<String>();
@@ -272,4 +464,6 @@ public class WikiFetcher {
 		}
 		return relatedEntity;
 	}
+	
+	
 }

@@ -1,8 +1,15 @@
-package com.wiki.expand;
+package com.wiki.entity;
+
+import com.wiki.expand.WikiFetcher;
 
 import de.tudarmstadt.ukp.wikipedia.api.Category;
 
 
+/**
+ * Category类型扩展
+ * @author Xiang
+ *
+ */
 public class MCategory{
 
 	private String title;

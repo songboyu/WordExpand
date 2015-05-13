@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.wiki.expand.MCategory;
+import com.wiki.entity.MCategory;
 
 import de.tudarmstadt.ukp.wikipedia.api.Category;
 import de.tudarmstadt.ukp.wikipedia.api.exception.WikiTitleParsingException;

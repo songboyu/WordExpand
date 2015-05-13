@@ -12,12 +12,12 @@ public class Test_wiki {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		String[] seeds = {"哈尔滨工业大学","上海交通大学"};
+		String[] seeds = {"枸杞","人参"};
 		Map<String,Set<String>> relatedEntities = WikiExpand.expandSeeds(seeds);
 		for(Entry<String, Set<String>> e:relatedEntities.entrySet()){
-			System.out.println("---------------------"+e.getKey());
-			for(String title:e.getValue())
-				System.out.println(title);
+			System.out.println(e.getKey() + "\t" + e.getValue().size());
+//			for(String title:e.getValue())
+//				System.out.println(title);
 		}
 	}
 }
