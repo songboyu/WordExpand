@@ -24,12 +24,12 @@ public class TaskDBManager {
 	// 连接池方式
 	
 	private String driver		= "com.mysql.jdbc.Driver";
-//	private String url			= "jdbc:mysql://125.211.198.185:3306/word_expand_task";
-//	private String user			= "bluetech";
-//	private String password		= "No.9332";//改成自己的mysql密码
-	private String url			= "jdbc:mysql://127.0.0.1/word_expand_task";
-	private String user			= "root";
-	private String password		= "123123";//改成自己的mysql密码
+	private String url			= "jdbc:mysql://125.211.198.185:3306/word_expand_task";
+	private String user			= "bluetech";
+	private String password		= "No.9332";//改成自己的mysql密码
+//	private String url			= "jdbc:mysql://127.0.0.1/word_expand_task";
+//	private String user			= "root";
+//	private String password		= "123123";//改成自己的mysql密码
 	private Connection conn 	= null;
 	private Statement st		= null;
 	private ResultSet rs		= null;

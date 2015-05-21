@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import com.baike.entity.BaikeCategory;
 import com.baike.entity.BaikeEntry;
 import com.baike.util.DBManager;
@@ -22,6 +24,7 @@ import com.baike.util.DBManager;
  *
  */
 public class Baike {
+	public static Logger log = Logger.getLogger(Baike.class);
 	/**
 	 * 根据词条id获取百科词条
 	 * @param entryId 百度百科词条id
@@ -178,6 +181,7 @@ public class Baike {
 		String sql = "call getEntriesByTag(?)";
 		Map<Object, Boolean> params = new LinkedHashMap<Object, Boolean>();
 		params.put(c.getId(), false);
+		log.info("getEntityByCategory "+c.getId()+" "+c.getTitle());
 		ResultSet rs = null;
 		CallableStatement cs = null;
 		try {

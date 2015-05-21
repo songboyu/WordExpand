@@ -29,12 +29,12 @@ public class DBManager {
 	// 连接池方式
 	
 	private static String driver="com.mysql.jdbc.Driver";
-//	private static String url			= "jdbc:mysql://125.211.198.185:3306/baidubaike2015";
-//	private static String user			= "bluetech";
-//	private static String password		= "No.9332";
-	private static String url="jdbc:mysql://127.0.0.1:3306/baidubaike";
-	private static String user="root";
-	private static String password="123123";//改成自己的mysql密码
+	private static String url			= "jdbc:mysql://125.211.198.185:3306/baidubaike";
+	private static String user			= "bluetech";
+	private static String password		= "No.9332";
+//	private static String url="jdbc:mysql://127.0.0.1:3306/baidubaike";
+//	private static String user="root";
+//	private static String password="123123";//改成自己的mysql密码
 	private static Connection conn 	= null;
 	private static Statement st		= null;
 	private static ResultSet rs		= null;
