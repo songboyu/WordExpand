@@ -33,12 +33,11 @@ public class BaikeFetch {
 	private	 static Pattern idPattern = Pattern.compile(ID_REX);
 
 	/**
-	 * @param seed
 	 * 输入种子词
 	 * 输出百度百科中该词页面链接
+	 * @param seed 种子词
 	 * @return String word_page_url
 	 */
-	@SuppressWarnings("serial")
 	public static Map<String, String> getWordPageURL(String seed){
 		String searchURL = "http://baike.baidu.com/search/word?word="+seed;
 		Map<String,String> word_page_urls = new HashMap<String, String>();
@@ -48,6 +47,11 @@ public class BaikeFetch {
 
 
 			NodeFilter filter = new NodeFilter() {
+				/**
+				 * 
+				 */
+				private static final long serialVersionUID = 1894619904528404753L;
+
 				public boolean accept(Node node) {
 					if (node instanceof LinkTag && 
 							node.getParent() instanceof ParagraphTag &&
@@ -68,6 +72,11 @@ public class BaikeFetch {
 				parser.setEncoding("UTF-8"); 
 
 				filter = new NodeFilter() {
+					/**
+					 * 
+					 */
+					private static final long serialVersionUID = 2869026100914248888L;
+
 					public boolean accept(Node node) {
 						if (node.getPreviousSibling() instanceof Span &&
 								node.getParent()!=null &&
@@ -129,6 +138,8 @@ public class BaikeFetch {
 				parser.setEncoding("UTF-8"); 
 
 				NodeFilter filter = new NodeFilter() {
+					private static final long serialVersionUID = -7693127158826482586L;
+
 					public boolean accept(Node node) {
 						if (node instanceof LinkTag && 
 								(node.getText().startsWith("a href=\"/fenlei/") || 
@@ -347,6 +358,11 @@ public class BaikeFetch {
 		return str;
 	}
 
+	/**
+	 * 利用百度百科扩展种子词
+	 * @param seeds 种子词数组
+	 * @return 返回扩展后的实体集合
+	 */
 	public static Map<String,Set<String>> baikeExpand(String[] seeds){
 		DBManager.getConnection();
 		Map<String,String> categorys = null;

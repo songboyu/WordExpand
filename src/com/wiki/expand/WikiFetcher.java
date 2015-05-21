@@ -218,6 +218,11 @@ public class WikiFetcher {
 		return resultSet;
 	}
 
+	/**
+	 * 根据条目获取其分类集合
+	 * @param p 条目页面
+	 * @return 分类集合
+	 */
 	public Set<Category> getCategories(Page p){
 		Set<Category> categorySet = null;
 		Set<Category> resultSet = new HashSet<Category>();
@@ -250,7 +255,7 @@ public class WikiFetcher {
 	public void calcProbScore(CandidateCombination c){
 		double score = 0;
 		for(MPage p: c.getCandiDateSet()){
-			score += Math.log(p.getProb());
+			score += Math.log(1-p.getProb()/2);
 		}
 		c.setProbScore(-score);
 	}
@@ -269,11 +274,12 @@ public class WikiFetcher {
 		//然后对相关度取log值
 		for(int i=0;i < candidateList.size() - 1;i++){
 			for(int j=i+1;j < candidateList.size();j++){
-				relevance += calcRelevance(candidateList.get(i), candidateList.get(j));
+				relevance += calcRelevance(candidateList.get(i).getPage(), 
+						candidateList.get(j).getPage());
 			}
 		}
-		relevance = Math.log(relevance);
-		c.setRelScore(-relevance);
+		relevance = Math.log(relevance+2);
+		c.setRelScore(relevance);
 	}
 	
 	/**
@@ -282,24 +288,37 @@ public class WikiFetcher {
 	 * @param mp2 条目2
 	 * @return 返回两个条目的相关度
 	 */
-	private double calcRelevance(MPage mp1, MPage mp2){
+	public double calcRelevance(Page p1, Page p2){
 		double relevance = 1.0;
 		//首先，获取两个扩展条目的条目对象
 		//接着，获取链接到这两个条目的条目id集合
 		//然后计算链接到这两个条目的条目id集合的交集
-		Page p1 = mp1.getPage();
-		Page p2 = mp2.getPage();
+//		Page p1 = mp1.getPage();
+//		Page p2 = mp2.getPage();
+		int revise = 1;
 		Set<Integer> X = p1.getInlinkIDs();
+		if(X.contains(p2.getPageId())){
+			revise = 3;
+		}
 		Set<Integer> Y = p2.getInlinkIDs();
+		if(Y.contains(p1.getPageId())){
+			revise = 3;
+		}
 		Set<Integer> retain = new HashSet<Integer>(X);
 		retain.retainAll(Y);
-		
+		if(X.size() < 1 && Y.size() < 1)
+			return 0;
+		//对各个计算参数进行加1平滑
 		//根据公式rel(x,y)=1-[log(max(|X|,|Y|))-log(|X∩Y|)]/[log(|W|)-log(min(|X|,|Y|))]
 		//计算两个条目的相关度
 		relevance -= (Math.log(Math.max(X.size()+1, Y.size()+1)) - 
 				Math.log(retain.size()+1)) / (Math.log(WIKI_PAGE_COUNT) - 
 				Math.log(Math.min(X.size()+1, Y.size()+1)));
-		return relevance;
+		if(relevance <0.1){
+			System.out.println();
+		}
+		return relevance * revise;
+		
 	}
 	
 	/**
@@ -437,10 +456,10 @@ public class WikiFetcher {
 	/**
 	 * 根据公有分类集合获取每个分类的相似实体集合
 	 * @param commonCategories 公有分类集合
-	 * @return 返货相似实体集合
+	 * @return 返回相似实体集合
 	 */
-	public static Map<String,Set<String>> getEntityByCategory(Set<MCategory> commonCategories){
-		Map<String,Set<String>> relatedEntity = new HashMap<String, Set<String>>();
+	public static Map<String,Set<Page>> getEntityByCategory(Set<MCategory> commonCategories){
+		Map<String,Set<Page>> relatedEntity = new HashMap<String, Set<Page>>();
 		//若公有分类集合为null，则直接返回
 		if(commonCategories == null){
 			return relatedEntity;
@@ -448,11 +467,11 @@ public class WikiFetcher {
 		
 		for(MCategory c:commonCategories){
 			//相似实体集合
-			Set<String> relatedStr = new HashSet<String>();
+			Set<Page> relatedPage = new HashSet<Page>();
 			try {
 				//遍历该分类下的每个页面，并将页面实体放入相似实体集合中
 				for(Page p : c.getCategory().getArticles()){
-					relatedStr.add(chinesdJF.chineseFan2Jan(p.getTitle().toString()));
+					relatedPage.add(p);
 				}
 				
 			} catch (WikiApiException e) {
@@ -460,7 +479,7 @@ public class WikiFetcher {
 				e.printStackTrace();
 			}
 			//将相似实体集合放入结果中
-			relatedEntity.put(c.getTitle(), relatedStr);
+			relatedEntity.put(c.getTitle(), relatedPage);
 		}
 		return relatedEntity;
 	}

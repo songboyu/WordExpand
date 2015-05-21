@@ -26,13 +26,13 @@ public class DBConfig {
 //		//设置语言
 //		dbConfig.setLanguage(Language.chinese);
 		//设置主机
-		dbConfig.setHost("192.168.1.106");
+		dbConfig.setHost("localhost");
 		//设置数据库
 		dbConfig.setDatabase("wiki");
 		//设置用户名
 		dbConfig.setUser("root");
 		//设置密码
-		dbConfig.setPassword("123456");
+		dbConfig.setPassword("123123");
 		//设置语言
 		dbConfig.setLanguage(Language.chinese);
 		return dbConfig;

@@ -6,8 +6,6 @@ import java.util.Map;
 
 import javax.ws.rs.core.UriBuilder;
 
-import org.apache.log4j.Logger;
-
 import com.sun.grizzly.http.SelectorThread;
 import com.sun.jersey.api.container.grizzly.GrizzlyWebContainerFactory;
 

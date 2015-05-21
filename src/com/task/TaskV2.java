@@ -1,35 +1,29 @@
 package com.task;
 
-import java.io.File;
 import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
-import com.baike.BaikeFetch;
+import com.baike.expand.BaikeExpand;
 import com.entity.RelatedEntity;
-import com.seal.expand.Entity;
-import com.seal.expand.EntityList;
-import com.seal.expand.Seal;
-import com.seal.util.Helper;
+import com.merge.MergeFetcher;
 import com.task.util.TaskDBManager;
 import com.wiki.expand.WikiExpand;
 
-public class Task {
-	private ConcurrentLinkedQueue<String[]> resultQueue = new ConcurrentLinkedQueue<String[]>();
+public class TaskV2 {
 	private String[] seedArray = null;
 	private String taskId = "";
+	List<RelatedEntity> sealEntityList = new ArrayList<RelatedEntity>();
+	List<RelatedEntity> wikiEntityList = new ArrayList<RelatedEntity>();
+	List<RelatedEntity> baikeEntityList = new ArrayList<RelatedEntity>();
 	private boolean sealFinished = false;
 	private boolean wikiFinished = false;
 	private boolean baikeFinished = false;
-	private boolean crawingFinished = false;
 	
-	public Task(){
+	public TaskV2(){
 		
 	}
 	
@@ -63,44 +57,7 @@ public class Task {
 		}
 		
 		private void sealExpand(){
-			File seedFile = new File(seedArray[0]);
-			String[] seedArr;
-			String hint = null;
-			if (seedFile.exists()) {
-				seedArr = Helper.readFile(seedFile).split("\n");
-				if (seedArray.length >= 2) {
-					File hintFile = Helper.toFileOrDie(seedArray[1]);
-					hint = Helper.readFile(hintFile).replaceAll("[\r\n]+", " ");
-				}
-			} else {
-				for (int i = 0; i < seedArray.length; i++)
-					seedArray[i] = seedArray[i].replace('_', ' ');
-				seedArr = seedArray;
-			}
-			EntityList seeds = new EntityList();
-			for (String s : seedArr) 
-				seeds.add(Entity.parseEntity(s));
-			Seal seal = new Seal();
-			seal.expand(seeds, seeds, hint);
-//			seal.save();
-			crawingFinished = true;
-
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-//			seal.getEntityList();
-			for(Entity e : seal.getEntities()){
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				resultQueue.add(new String[]{e.getName().toString(), ""});
-			}
+			sealEntityList = MergeFetcher.sealExpand(seedArray);
 		}
 		
 	}
@@ -117,26 +74,7 @@ public class Task {
 		
 		private void wikiExpand(){
 			Map<String, RelatedEntity> relatedEntities = WikiExpand.expandSeeds(seedArray);
-			while(!crawingFinished){
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-			for(Entry<String, RelatedEntity> e:relatedEntities.entrySet()){
-//				System.out.println("---------------------"+e.getKey());
-				resultQueue.add(new String[]{e.getKey(), e.getValue().getCategoryTitle()});
-//				for(String title:e.getValue())
-//					resultQueue.add(new String[]{title, e.getKey()});
-//					try {
-//						Thread.sleep(100);
-//					} catch (InterruptedException e1) {
-//						// TODO Auto-generated catch block
-//						e1.printStackTrace();
-//					}
-			}
+			wikiEntityList = new ArrayList<RelatedEntity>(relatedEntities.values());
 		}
 		
 	}
@@ -152,28 +90,8 @@ public class Task {
 		}
 		
 		private void baikeExpand(){
-			Map<String,Set<String>> entities = BaikeFetch.baikeExpand(seedArray);
-
-			while(!crawingFinished){
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-			for(Entry<String,Set<String>> e:entities.entrySet()){
-//				System.out.println("----------------------"+e.getKey());
-				for(String word:e.getValue()){
-					try {
-						Thread.sleep(100);
-					} catch (InterruptedException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					resultQueue.add(new String[]{word, e.getKey()});
-				}
-			}
+			Map<String, RelatedEntity> relatedEntities = BaikeExpand.expandSeeds(seedArray);
+			baikeEntityList = new ArrayList<RelatedEntity>(relatedEntities.values());
 		}
 		
 	}
@@ -222,28 +140,24 @@ public class Task {
 		
 		private void writeResult(){
 			while(true){
-				while(!resultQueue.isEmpty()){
-					if(writeResultToDb(resultQueue.poll()))
-						increaseRsCount();
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+				if(sealFinished && wikiFinished && baikeFinished){
+					break;
 				}
 				try {
-					Thread.sleep(3000);
+					Thread.sleep(2000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				if(sealFinished && wikiFinished && baikeFinished && resultQueue.isEmpty()){
-					break;
-				}
-				else{
-
-				}
+			}
+			List<RelatedEntity> mergeList = MergeFetcher.mergeEntity(sealEntityList, wikiEntityList, baikeEntityList);
+			for(RelatedEntity re: mergeList){
+				if(writeResultToDb(new String[]{
+						re.getEntityTitle(), 
+						re.getCategoryTitle(),
+						re.getRealScore()+""
+					}))
+					increaseRsCount();
 			}
 		}
 		
@@ -252,11 +166,12 @@ public class Task {
 //			System.out.println(Arrays.toString(result));
 			if(result != null){
 				
-				String sql = "insert into result(task_id,rs,tag) values(?,?,?)";
+				String sql = "insert into result(task_id,rs,tag,score) values(?,?,?,?)";
 				List<Object>params = new ArrayList<Object>();
 				params.add(taskId);
 				params.add(result[0]);
 				params.add(result[1]);
+				params.add(result[2]);
 				try {
 					flag = tdb.insert(sql, params);
 				} catch (SQLTimeoutException e) {
