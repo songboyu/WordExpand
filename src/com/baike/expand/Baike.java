@@ -24,12 +24,12 @@ import com.baike.util.DBManager;
  *
  */
 public class Baike {
-	public static Logger log = Logger.getLogger(Baike.class);
 	/**
 	 * 根据词条id获取百科词条
 	 * @param entryId 百度百科词条id
 	 * @return 返回百科条目对象
 	 */
+	public static Logger log = Logger.getLogger(Baike.class);
 	public static BaikeEntry getBaikeEntryById(String entryId){
 		String entryName = null;
 		//创建sql语句，并设置查询参数以获取结果
@@ -103,10 +103,10 @@ public class Baike {
 	}
 
 	/**
-	 * 根据词条信息获取指向该词条的所有页面id
+	 * 根据词条信息获取指向该词条的所有页面个数
 	 * @param entry 词条信息
 	 */
-	public static void getInlinks(BaikeEntry entry){
+	public static void getInlinkCount(BaikeEntry entry){
 		String sql = "SELECT count(ent_id) from inlinks where inlink = ?";
 		List<Object> params = new ArrayList<Object>();
 		params.add(entry.getEntryId());
@@ -128,6 +128,31 @@ public class Baike {
 		}
 	}
 
+	public static void getInlinks(BaikeEntry entry){
+		String sql = "SELECT ent_id from inlinks where inlink = ?";
+		List<Object> params = new ArrayList<Object>();
+		params.add(entry.getEntryId());
+		ResultSet rs = null;
+		try {
+			rs = DBManager.query(sql, params);
+			Set<String> inlinks = new HashSet<String>();
+			while(rs.next()){
+				inlinks.add(rs.getString(1));
+				
+			}
+			entry.setInlinks(inlinks);
+		} catch (SQLTimeoutException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally{
+			//关闭结果集
+			DBManager.closeAll(null, null, rs);
+		}
+	}
+	
 	/**
 	 * 根据词条信息获取指向该词条的所有页面id
 	 * @param entry 词条信息
@@ -181,12 +206,12 @@ public class Baike {
 		String sql = "call getEntriesByTag(?)";
 		Map<Object, Boolean> params = new LinkedHashMap<Object, Boolean>();
 		params.put(c.getId(), false);
-		log.info("getEntityByCategory "+c.getId()+" "+c.getTitle());
 		ResultSet rs = null;
 		CallableStatement cs = null;
 		try {
 			cs = DBManager.executeCallable(sql, params);
 			rs = cs.getResultSet();
+			log.info("getEntriesByTag Finish");
 			BaikeEntry be0 = null;
 			if(rs.next()){
 				be0 = new BaikeEntry(rs.getString(1), rs.getString(2));

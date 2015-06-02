@@ -277,19 +277,23 @@ public class BaikeFetcher {
 //		Page p1 = mp1.getPage();
 //		Page p2 = mp2.getPage();
 		int revise = 1;
-		if(Baike.isDirectRel(e1.getEntryId(), e2.getEntryId())){
-			revise = 3;
-		}
+		
 		int X=0,Y=0,Z=0;
 		if(!isRelate){
 			X = e1.getInlinkCount();
 			Y = e2.getInlinkCount();
 			Z = Baike.getIntersectCount(e1.getEntryId(), e2.getEntryId());
-			
+			if(Baike.isDirectRel(e1.getEntryId(), e2.getEntryId())){
+				revise = 3;
+			}
 		} 
 		else{
 			Set<String> XLink = e1.getInlinks();
-			Set<String> YLink = e1.getInlinks();
+			Set<String> YLink = e2.getInlinks();
+			if(XLink.contains(e2.getEntryId()) || YLink.contains(e1.getEntryId()))
+			{
+				revise = 3;
+			}
 			X = XLink.size();
 			Y = YLink.size();
 			Set<String> retain = new HashSet<String>(XLink);
@@ -341,9 +345,11 @@ public class BaikeFetcher {
 		
 		for(BaikeCategory c:commonCategories){
 			//如果类别下的条目数过多，则说明该类别颗粒度过大，因此舍弃该条目
-			if(Baike.getEntityCountByCategory(c) > 5000){
+			int entityCount = Baike.getEntityCountByCategory(c);
+			if(entityCount > 5000){
 				continue;
 			}
+			log.info(c.getId()+" "+c.getTitle()+"  Size:"+entityCount);
 			//相似实体集合
 			List<BaikeEntry> relatedEntry = new ArrayList<BaikeEntry>();
 			//遍历该分类下的每个页面，并将页面实体放入相似实体集合中

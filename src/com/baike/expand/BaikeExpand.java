@@ -194,6 +194,10 @@ public class BaikeExpand {
  				suitableCombination = c;
  			}
  		}
+ 		for(BaikeEntry be:suitableCombination.getCandiDateSet()){
+ 			Baike.getInlinks(be);
+ 		}
+ 			
  		return suitableCombination;
  	}
  	
